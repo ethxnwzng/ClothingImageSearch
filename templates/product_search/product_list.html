@@ -1,0 +1,264 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Product Catalog - Halara Product Search{% endblock %}
+
+{% block extra_css %}
+<style>
+    .product-card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease;
+        height: 100%;
+    }
+    
+    .product-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .product-image {
+        height: 200px;
+        object-fit: cover;
+        border-radius: 10px 10px 0 0;
+    }
+    
+    .category-badge {
+        font-size: 0.8rem;
+    }
+    
+    .search-box {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        margin-bottom: 2rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="display-5 mb-2">
+                        <i class="fas fa-list text-info"></i> Product Catalog
+                    </h1>
+                    <p class="text-muted mb-0">
+                        Browse all indexed products in the search database
+                    </p>
+                </div>
+                <a href="{% url 'product_search:upload_product' %}" class="btn btn-success">
+                    <i class="fas fa-plus"></i> Add Product
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Search and Filter -->
+    <div class="search-box">
+        <div class="row">
+            <div class="col-md-8">
+                <div class="input-group">
+                    <span class="input-group-text">
+                        <i class="fas fa-search"></i>
+                    </span>
+                    <input type="text" class="form-control" id="searchInput" placeholder="Search products by name, code, or category...">
+                </div>
+            </div>
+            <div class="col-md-4">
+                <select class="form-select" id="categoryFilter">
+                    <option value="">All Categories</option>
+                    <option value="Athletic Wear">Athletic Wear</option>
+                    <option value="Jeans">Jeans</option>
+                    <option value="Dresses">Dresses</option>
+                    <option value="Shirts">Shirts</option>
+                    <option value="Pants">Pants</option>
+                    <option value="Shorts">Shorts</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Products Grid -->
+    <div class="row" id="productsGrid">
+        {% if page_obj %}
+            {% for product in page_obj %}
+            <div class="col-md-6 col-lg-4 mb-4 product-item" 
+                 data-name="{{ product.name|lower }}" 
+                 data-code="{{ product.product_code|lower }}"
+                 data-category="{{ product.category|lower }}">
+                <div class="card product-card">
+                    {% if product.s3_url %}
+                        <img src="{{ product.s3_url }}" class="card-img-top product-image" alt="{{ product.name }}">
+                    {% else %}
+                        <div class="card-img-top product-image bg-light d-flex align-items-center justify-content-center">
+                            <i class="fas fa-image fa-3x text-muted"></i>
+                        </div>
+                    {% endif %}
+                    
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h5 class="card-title mb-0">{{ product.name }}</h5>
+                            {% if product.category %}
+                                <span class="badge bg-primary category-badge">{{ product.category }}</span>
+                            {% endif %}
+                        </div>
+                        
+                        <p class="card-text text-muted small mb-2">
+                            <i class="fas fa-barcode"></i> {{ product.product_code }}
+                        </p>
+                        
+                        {% if product.description %}
+                            <p class="card-text small">{{ product.description|truncatewords:15 }}</p>
+                        {% endif %}
+                        
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">
+                                <i class="fas fa-clock"></i> {{ product.created_at|date:"M j, Y" }}
+                            </small>
+                            <a href="{% url 'product_search:product_detail' product.id %}" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-eye"></i> View
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12">
+                <div class="text-center py-5">
+                    <i class="fas fa-box-open fa-4x text-muted mb-3"></i>
+                    <h3>No Products Found</h3>
+                    <p class="text-muted">
+                        No products have been uploaded yet. Start by adding your first product!
+                    </p>
+                    <a href="{% url 'product_search:upload_product' %}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Add First Product
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+    
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+    <div class="row">
+        <div class="col-12">
+            <nav aria-label="Product pagination">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1">
+                                <i class="fas fa-angle-double-left"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}">
+                                <i class="fas fa-angle-left"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                    
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}">
+                                <i class="fas fa-angle-right"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">
+                                <i class="fas fa-angle-double-right"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Summary -->
+    {% if page_obj %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h6 class="card-title">
+                        <i class="fas fa-chart-bar text-info"></i> Catalog Summary
+                    </h6>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <h4 class="text-primary">{{ page_obj.paginator.count }}</h4>
+                            <small class="text-muted">Total Products</small>
+                        </div>
+                        <div class="col-md-4">
+                            <h4 class="text-success">{{ page_obj.number }}</h4>
+                            <small class="text-muted">Current Page</small>
+                        </div>
+                        <div class="col-md-4">
+                            <h4 class="text-info">{{ page_obj.paginator.num_pages }}</h4>
+                            <small class="text-muted">Total Pages</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('searchInput');
+    const categoryFilter = document.getElementById('categoryFilter');
+    const productsGrid = document.getElementById('productsGrid');
+    const productItems = document.querySelectorAll('.product-item');
+    
+    // Search functionality
+    function filterProducts() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const categoryTerm = categoryFilter.value.toLowerCase();
+        
+        productItems.forEach(item => {
+            const name = item.dataset.name;
+            const code = item.dataset.code;
+            const category = item.dataset.category;
+            
+            const matchesSearch = name.includes(searchTerm) || 
+                                code.includes(searchTerm) || 
+                                category.includes(searchTerm);
+            
+            const matchesCategory = !categoryTerm || category === categoryTerm;
+            
+            if (matchesSearch && matchesCategory) {
+                item.style.display = 'block';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    }
+    
+    // Event listeners
+    searchInput.addEventListener('input', filterProducts);
+    categoryFilter.addEventListener('change', filterProducts);
+});
+</script>
+{% endblock %} 

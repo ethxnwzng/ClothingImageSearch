@@ -1,0 +1,270 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Search Results - Halara Product Search{% endblock %}
+
+{% block extra_css %}
+<style>
+    .result-card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease;
+        margin-bottom: 1.5rem;
+    }
+    
+    .result-card:hover {
+        transform: translateY(-2px);
+    }
+    
+    .confidence-badge {
+        font-size: 0.9rem;
+        padding: 0.5rem 1rem;
+    }
+    
+    .detection-box {
+        background: rgba(102, 126, 234, 0.1);
+        border: 2px solid #667eea;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .uploaded-image {
+        max-width: 100%;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .api-section {
+        background: white;
+        border-radius: 15px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="display-6 mb-2">
+                        <i class="fas fa-search text-primary"></i> Search Results
+                    </h1>
+                    <p class="text-muted mb-0">
+                        Session ID: {{ search_session.session_id }}
+                    </p>
+                </div>
+                <a href="{% url 'product_search:search_product' %}" class="btn btn-outline-primary">
+                    <i class="fas fa-plus"></i> New Search
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Uploaded Image -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="api-section">
+                <h3 class="mb-3">
+                    <i class="fas fa-image text-info"></i> Uploaded Image
+                </h3>
+                <div class="text-center">
+                    <img src="{{ search_session.uploaded_image.url }}" alt="Uploaded Image" class="uploaded-image" style="max-height: 400px;">
+                </div>
+                <div class="mt-3 text-center">
+                    <small class="text-muted">
+                        Uploaded at: {{ search_session.created_at|date:"F j, Y, g:i a" }}
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- YOLO Detection Results -->
+    {% if yolo_detections %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="api-section">
+                <h3 class="mb-3">
+                    <i class="fas fa-robot text-primary"></i> YOLO Object Detection
+                </h3>
+                
+                {% for detection in yolo_detections %}
+                <div class="detection-box">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5>Detected Objects</h5>
+                            {% if detection.detected_objects.phrases %}
+                                <ul class="list-unstyled">
+                                    {% for phrase in detection.detected_objects.phrases %}
+                                    <li>
+                                        <i class="fas fa-tag text-success"></i> {{ phrase }}
+                                        {% if detection.detected_objects.scores %}
+                                            <span class="badge bg-success ms-2">
+                                                {{ detection.detected_objects.scores|slice:forloop.counter0|slice:":1"|first|floatformat:2 }}
+                                            </span>
+                                        {% endif %}
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                            {% else %}
+                                <p class="text-muted">No objects detected</p>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h5>Detection Details</h5>
+                            <ul class="list-unstyled">
+                                <li><strong>File Type:</strong> {{ detection.detected_objects.file_type|default:"Unknown" }}</li>
+                                <li><strong>Detection Count:</strong> {{ detection.detected_objects.phrases|length|default:0 }}</li>
+                                {% if detection.detected_objects.boxes %}
+                                <li><strong>Bounding Boxes:</strong> {{ detection.detected_objects.boxes|length }}</li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    {% if detection.output_mask_urls %}
+                    <div class="mt-3">
+                        <h6>Generated Masks</h6>
+                        <div class="row">
+                            {% for mask_url in detection.output_mask_urls %}
+                            <div class="col-md-3 mb-2">
+                                <div class="card">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-crop-alt text-info"></i>
+                                        <small class="d-block text-muted">Mask {{ forloop.counter }}</small>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Visual Search Results -->
+    {% if search_results %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="api-section">
+                <h3 class="mb-3">
+                    <i class="fas fa-eye text-success"></i> Visual Search Results
+                </h3>
+                
+                <div class="row">
+                    {% for result in search_results %}
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card result-card h-100">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h6 class="card-title mb-0">
+                                        <i class="fas fa-search"></i> Result {{ forloop.counter }}
+                                    </h6>
+                                    <span class="badge bg-primary confidence-badge">
+                                        {{ result.confidence_score|floatformat:2 }}
+                                    </span>
+                                </div>
+                                
+                                {% if result.metadata %}
+                                <div class="small text-muted">
+                                    {% if result.metadata.product_code %}
+                                    <div><strong>Product Code:</strong> {{ result.metadata.product_code }}</div>
+                                    {% endif %}
+                                    {% if result.metadata.s3_url %}
+                                    <div><strong>S3 URL:</strong> <code class="small">{{ result.metadata.s3_url|truncatechars:30 }}</code></div>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                                
+                                <div class="mt-2">
+                                    <small class="text-muted">
+                                        <i class="fas fa-clock"></i> {{ result.created_at|date:"g:i a" }}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="api-section">
+                <div class="text-center">
+                    <i class="fas fa-info-circle fa-3x text-muted mb-3"></i>
+                    <h4>No Visual Search Results</h4>
+                    <p class="text-muted">
+                        No similar products were found. This might be because:
+                    </p>
+                    <ul class="list-unstyled text-muted">
+                        <li>• The Visual Search API is not configured</li>
+                        <li>• No products have been indexed yet</li>
+                        <li>• The image doesn't match any indexed products</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Summary -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-chart-bar text-info"></i> Search Summary
+                    </h5>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h4 class="text-primary">{{ yolo_detections|length }}</h4>
+                                <small class="text-muted">YOLO Detections</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h4 class="text-success">{{ search_results|length }}</h4>
+                                <small class="text-muted">Visual Matches</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h4 class="text-info">{{ search_session.created_at|timesince }}</h4>
+                                <small class="text-muted">Search Duration</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h4 class="text-warning">
+                                    {% if search_results %}
+                                        {{ search_results|first.confidence_score|floatformat:2 }}
+                                    {% else %}
+                                        0.00
+                                    {% endif %}
+                                </h4>
+                                <small class="text-muted">Best Match Score</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

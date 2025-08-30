@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Halara Product Search</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .hero {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 40px 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+        }
+        .hero h1 {
+            margin: 0 0 20px 0;
+            font-size: 2.5em;
+        }
+        .hero p {
+            font-size: 1.2em;
+            margin: 0 0 30px 0;
+            opacity: 0.9;
+        }
+        .nav-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .nav-btn {
+            background-color: white;
+            color: #667eea;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        .nav-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            color: #667eea;
+            text-decoration: none;
+        }
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+        .feature-card {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid #e9ecef;
+        }
+        .feature-card h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+        .feature-card p {
+            color: #666;
+            line-height: 1.6;
+        }
+        .api-status {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 10px;
+            background: #f8f9fa;
+        }
+        .api-status h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .test-btn {
+            background-color: #28a745;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .test-btn:hover {
+            background-color: #218838;
+        }
+        .status-item {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .status-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="hero">
+            <h1>Halara Product Search</h1>
+            <p>Advanced product recognition powered by DINO and YOLO APIs</p>
+            <div class="nav-buttons">
+                <a href="{% url 'product_search:search_product' %}" class="nav-btn">🔍 Search Products</a>
+                <a href="{% url 'product_search:upload_product' %}" class="nav-btn">📤 Upload Product</a>
+                <a href="{% url 'product_search:product_list' %}" class="nav-btn">📋 View Catalog</a>
+            </div>
+        </div>
+
+        <div class="features">
+            <div class="feature-card">
+                <h3>🔍 Smart Search</h3>
+                <p>Upload an image and find similar products using advanced AI algorithms powered by DINO and YOLO.</p>
+            </div>
+            <div class="feature-card">
+                <h3>📤 Product Upload</h3>
+                <p>Add new products to the database and make them searchable through our AI-powered system.</p>
+            </div>
+            <div class="feature-card">
+                <h3>🤖 AI-Powered</h3>
+                <p>Combines YOLO World for object detection and DINO for visual similarity matching.</p>
+            </div>
+        </div>
+
+        <div class="api-status">
+            <h3>🔌 API Connection Status</h3>
+            <button id="testConnectionBtn" class="test-btn">Test API Connections</button>
+            <div id="apiStatusContainer" style="display: none; margin-top: 20px;">
+                <div id="yoloStatus" class="status-item">
+                    <strong>🤖 YOLO API:</strong> <span id="yoloDetails">Testing...</span>
+                </div>
+                <div id="visualSearchStatus" class="status-item">
+                    <strong>👁️ Visual Search API:</strong> <span id="visualSearchDetails">Testing...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('testConnectionBtn').addEventListener('click', function() {
+            const btn = this;
+            const container = document.getElementById('apiStatusContainer');
+            
+            btn.textContent = 'Testing...';
+            btn.disabled = true;
+            container.style.display = 'block';
+            
+            fetch('/api/test-connection/')
+                .then(response => response.json())
+                .then(data => {
+                    // console.log(data);
+                    data = data.results;
+                    data_yolo = data.yolo;
+                    data_visual_search = data.visual_search;
+                    // Update YOLO status
+                    const yoloStatus = document.getElementById('yoloStatus');
+                    const yoloDetails = document.getElementById('yoloDetails');
+                    yoloDetails.textContent = data_yolo.status;
+                    yoloStatus.className = 'status-item ' + 
+                        (data_yolo.status === 'Connected' ? 'status-success' : 'status-error');
+                    
+                    // Update Visual Search status
+                    const visualSearchStatus = document.getElementById('visualSearchStatus');
+                    const visualSearchDetails = document.getElementById('visualSearchDetails');
+                    visualSearchDetails.textContent = typeof data_visual_search.status === 'string' 
+                        ? data_visual_search.status 
+                        : 'Error: ' + JSON.stringify(data_visual_search.status);
+                    visualSearchStatus.className = 'status-item ' + 
+                        (typeof data_visual_search.status === 'string' && data_visual_search.status.includes('Connected') 
+                            ? 'status-success' : 'status-error');
+                    
+                    btn.textContent = 'Test API Connections';
+                    btn.disabled = false;
+                })
+                .catch(error => {
+                    // console.log(error);
+                    document.getElementById('yoloDetails').textContent = 'Error: ' + error.message;
+                    document.getElementById('visualSearchDetails').textContent = 'Error: ' + error.message;
+                    document.getElementById('yoloStatus').className = 'status-item status-error';
+                    document.getElementById('visualSearchStatus').className = 'status-item status-error';
+                    btn.textContent = 'Test API Connections';
+                    btn.disabled = false;
+                });
+        });
+    </script>
+</body>
+</html> 

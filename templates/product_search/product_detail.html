@@ -1,0 +1,192 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ product.name }} - Halara Product Search{% endblock %}
+
+{% block extra_css %}
+<style>
+    .product-detail {
+        background: white;
+        border-radius: 15px;
+        padding: 2rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .product-image {
+        max-width: 100%;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .info-card {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .metadata-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    .metadata-item:last-child {
+        border-bottom: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{% url 'product_search:index' %}">
+                    <i class="fas fa-home"></i> Home
+                </a>
+            </li>
+            <li class="breadcrumb-item">
+                <a href="{% url 'product_search:product_list' %}">Products</a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">{{ product.name }}</li>
+        </ol>
+    </nav>
+    
+    <div class="row">
+        <!-- Product Image -->
+        <div class="col-lg-6 mb-4">
+            <div class="product-detail">
+                <h3 class="mb-3">
+                    <i class="fas fa-image text-info"></i> Product Image
+                </h3>
+                
+                {% if product.s3_url %}
+                    <img src="{{ product.s3_url }}" alt="{{ product.name }}" class="product-image">
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-image fa-4x text-muted mb-3"></i>
+                        <p class="text-muted">No image available</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Product Information -->
+        <div class="col-lg-6">
+            <div class="product-detail">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <h2 class="mb-0">{{ product.name }}</h2>
+                    {% if product.category %}
+                        <span class="badge bg-primary">{{ product.category }}</span>
+                    {% endif %}
+                </div>
+                
+                <p class="text-muted mb-4">
+                    <i class="fas fa-barcode"></i> {{ product.product_code }}
+                </p>
+                
+                {% if product.description %}
+                    <div class="mb-4">
+                        <h5>Description</h5>
+                        <p>{{ product.description }}</p>
+                    </div>
+                {% endif %}
+                
+                <!-- Product Metadata -->
+                <div class="info-card">
+                    <h5 class="mb-3">
+                        <i class="fas fa-info-circle text-primary"></i> Product Details
+                    </h5>
+                    
+                    <div class="metadata-item">
+                        <span><i class="fas fa-barcode text-muted"></i> Product Code</span>
+                        <strong>{{ product.product_code }}</strong>
+                    </div>
+                    
+                    {% if product.category %}
+                    <div class="metadata-item">
+                        <span><i class="fas fa-tags text-muted"></i> Category</span>
+                        <strong>{{ product.category }}</strong>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="metadata-item">
+                        <span><i class="fas fa-calendar text-muted"></i> Created</span>
+                        <strong>{{ product.created_at|date:"F j, Y" }}</strong>
+                    </div>
+                    
+                    <div class="metadata-item">
+                        <span><i class="fas fa-clock text-muted"></i> Last Updated</span>
+                        <strong>{{ product.updated_at|date:"F j, Y" }}</strong>
+                    </div>
+                    
+                    {% if product.s3_url %}
+                    <div class="metadata-item">
+                        <span><i class="fas fa-link text-muted"></i> S3 URL</span>
+                        <small class="text-muted">{{ product.s3_url|truncatechars:30 }}</small>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Actions -->
+                <div class="d-grid gap-2 mt-4">
+                    <a href="{% url 'product_search:search_product' %}" class="btn btn-primary">
+                        <i class="fas fa-search"></i> Search Similar Products
+                    </a>
+                    <a href="{% url 'product_search:product_list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-list"></i> Back to Catalog
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Search History (if available) -->
+    {% if product.searchresult_set.all %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="product-detail">
+                <h3 class="mb-3">
+                    <i class="fas fa-history text-warning"></i> Search History
+                </h3>
+                
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Search Date</th>
+                                <th>Confidence Score</th>
+                                <th>Result Type</th>
+                                <th>Session ID</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for result in product.searchresult_set.all %}
+                            <tr>
+                                <td>{{ result.created_at|date:"M j, Y g:i a" }}</td>
+                                <td>
+                                    <span class="badge bg-{% if result.confidence_score > 0.8 %}success{% elif result.confidence_score > 0.5 %}warning{% else %}danger{% endif %}">
+                                        {{ result.confidence_score|floatformat:2 }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-info">{{ result.result_type }}</span>
+                                </td>
+                                <td>
+                                    <small class="text-muted">{{ result.search_session.session_id|truncatechars:20 }}</small>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %} 

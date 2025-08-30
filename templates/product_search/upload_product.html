@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Product</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .upload-form {
+            text-align: center;
+        }
+        .form-group {
+            margin: 20px 0;
+            text-align: left;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input, .form-group textarea, .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        .form-group textarea {
+            height: 100px;
+            resize: vertical;
+        }
+        .submit-btn {
+            background-color: #28a745;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 20px;
+        }
+        .submit-btn:hover {
+            background-color: #218838;
+        }
+        .submit-btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .success {
+            color: green;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .error {
+            color: red;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .back-link {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .back-link a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        .back-link a:hover {
+            text-decoration: underline;
+        }
+        .image-preview {
+            max-width: 300px;
+            max-height: 300px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: none;
+            margin: 10px auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 style="text-align: center; margin-bottom: 30px;">Upload Product</h1>
+        
+        <form method="post" enctype="multipart/form-data" class="upload-form" id="uploadForm">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="{{ form.product_code.id_for_label }}">Product Code:</label>
+                {{ form.product_code }}
+                {% if form.product_code.errors %}
+                    <div class="error">{{ form.product_code.errors.0 }}</div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.category.id_for_label }}">Category:</label>
+                {{ form.category }}
+                {% if form.category.errors %}
+                    <div class="error">{{ form.category.errors.0 }}</div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.name.id_for_label }}">Product Name:</label>
+                {{ form.name }}
+                {% if form.name.errors %}
+                    <div class="error">{{ form.name.errors.0 }}</div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.description.id_for_label }}">Description:</label>
+                {{ form.description }}
+                {% if form.description.errors %}
+                    <div class="error">{{ form.description.errors.0 }}</div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.image.id_for_label }}">Product Image:</label>
+                {{ form.image }}
+                {% if form.image.errors %}
+                    <div class="error">{{ form.image.errors.0 }}</div>
+                {% endif %}
+            </div>
+
+            <div class="text-center">
+                <img id="imagePreview" class="image-preview" alt="Product Preview">
+            </div>
+
+            <button type="submit" class="submit-btn" id="uploadBtn">Upload Product</button>
+        </form>
+
+        {% if success_message %}
+        <div class="success">
+            <h3>Success!</h3>
+            <p>{{ success_message }}</p>
+        </div>
+        {% endif %}
+
+        {% if error_message %}
+        <div class="error">
+            <h3>Error:</h3>
+            <p>{{ error_message }}</p>
+        </div>
+        {% endif %}
+
+        <div class="back-link">
+            <a href="{% url 'product_search:search_product' %}">← Back to Search</a>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const imageInput = document.getElementById('{{ form.image.id_for_label }}');
+            const imagePreview = document.getElementById('imagePreview');
+            const uploadForm = document.getElementById('uploadForm');
+            const uploadBtn = document.getElementById('uploadBtn');
+            
+            // Handle image preview
+            imageInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    displayImagePreview(file);
+                }
+            });
+            
+            // Display image preview
+            function displayImagePreview(file) {
+                if (file && file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        imagePreview.src = e.target.result;
+                        imagePreview.style.display = 'block';
+                    };
+                    reader.readAsDataURL(file);
+                }
+            }
+            
+            // Form submission
+            uploadForm.addEventListener('submit', function(e) {
+                if (!imageInput.files.length) {
+                    e.preventDefault();
+                    alert('Please select a product image.');
+                    return;
+                }
+                
+                // Show loading state
+                uploadBtn.textContent = 'Uploading...';
+                uploadBtn.disabled = true;
+            });
+        });
+    </script>
+</body>
+</html> 

@@ -1,0 +1,11 @@
+Django==4.2.23
+requests==2.32.4
+Pillow==11.2.1
+boto3==1.38.44
+python-decouple==3.8
+torch==2.0.1
+torchvision==0.15.2
+numpy==1.24.3
+opencv-python==4.8.0.76
+psycopg2-binary==2.9.9
+redis==5.0.1 

@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Halara Image Search</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .header h1 {
+            color: #333;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+        .upload-section {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 40px;
+            border: 3px dashed #ddd;
+            border-radius: 15px;
+            background: #fafafa;
+            transition: all 0.3s ease;
+        }
+        .upload-section:hover {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+        .file-input {
+            margin: 20px 0;
+        }
+        .file-input input[type="file"] {
+            display: none;
+        }
+        .file-input label {
+            background: #667eea;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            display: inline-block;
+        }
+        .file-input label:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+        }
+        .submit-btn {
+            background: #28a745;
+            color: white;
+            padding: 15px 40px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+        }
+        .submit-btn:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+        .submit-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .loading {
+            text-align: center;
+            margin: 30px 0;
+            color: #666;
+        }
+        .loading .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .results {
+            margin-top: 40px;
+        }
+        .uploaded-image-section {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 15px;
+        }
+        .uploaded-image {
+            max-width: 400px;
+            max-height: 400px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .categories-section {
+            margin-top: 40px;
+        }
+        .categories-title {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .categories-title h2 {
+            color: #333;
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+        .categories-title p {
+            color: #666;
+            font-size: 1.1em;
+        }
+        .categories-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+        .category-card {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .category-card:hover {
+            border-color: #667eea;
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(102,126,234,0.3);
+        }
+        .category-card.selected {
+            border-color: #28a745;
+            background: #f8fff9;
+            transform: translateY(-5px);
+        }
+        .category-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+        .category-name {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .category-confidence {
+            background: #28a745;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            display: inline-block;
+        }
+        .search-btn {
+            background: #667eea;
+            color: white;
+            padding: 15px 40px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            margin-top: 30px;
+            width: 100%;
+            max-width: 400px;
+        }
+        .search-btn:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+        }
+        .search-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .visual-search-results {
+            margin-top: 40px;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 15px;
+        }
+        .selected-category-info {
+            background: #e8f5e8;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            border: 2px solid #28a745;
+            text-align: center;
+        }
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        .result-card {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        .result-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+        }
+        .result-image {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+        }
+        .result-info {
+            padding: 15px;
+        }
+        .result-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .result-score {
+            color: #667eea;
+            font-weight: bold;
+        }
+        .no-image-placeholder {
+            width: 100%;
+            height: 250px;
+            background: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Halara Image Search</h1>
+            <p>Upload an image to find similar clothing items</p>
+        </div>
+        
+        <!-- Upload Section -->
+        <form method="post" enctype="multipart/form-data" class="upload-section" id="searchForm">
+            {% csrf_token %}
+            <div class="file-input">
+                <label for="imageInput">
+                    Choose an image to upload
+                </label>
+                <input type="file" name="image" accept="image/*" required id="imageInput">
+            </div>
+            <button type="submit" class="submit-btn" id="submitBtn">Start Search</button>
+        </form>
+
+        <!-- Loading Section -->
+        <div id="loading" class="loading" style="display: none;">
+            <div class="spinner"></div>
+            <h3>Processing your image...</h3>
+            <p>Uploading to S3 → YOLO Object Detection → Preparing Visual Search</p>
+        </div>
+
+        <!-- Error Section -->
+        {% if error %}
+        <div class="error">
+            <h3>Error:</h3>
+            <p>{{ error }}</p>
+        </div>
+        {% endif %}
+
+        <!-- Results Section -->
+        {% if results %}
+        <div class="results">
+            <!-- Uploaded Image Section -->
+            <div class="uploaded-image-section">
+                <h3>Your Uploaded Image</h3>
+                {% if results.uploaded_image_url %}
+                    <img src="{{ results.uploaded_image_url }}" 
+                         alt="Uploaded Image" 
+                         class="uploaded-image">
+                {% else %}
+                    <div class="no-image-placeholder">
+                        <span>Image not available</span>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <!-- YOLO Detection Results -->
+            {% if results.detected_items %}
+                {% if results.multiple_items_detected %}
+                    <!-- Multiple items detected - prompt for category selection -->
+                    <div class="categories-section">
+                        <div class="categories-title">
+                            <h2>Multiple Clothing Items Detected</h2>
+                            <p>YOLO has detected multiple pieces of clothing in your image. Would you like to search for a top or a bottom?</p>
+                        </div>
+                        
+                        <form method="post" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <input type="hidden" name="session_id" value="{{ results.session_id }}">
+                            
+                            <div class="categories-grid">
+                                <!-- Top Category -->
+                                <div class="category-card" onclick="selectCategory('top')">
+                                    <div style="background: #e3f2fd; padding: 20px; border-radius: 10px; margin-bottom: 15px;">
+                                        <h3 style="color: #1976d2; margin: 0;">👕 Top</h3>
+                                        <p style="color: #666; margin: 10px 0 0 0;">Shirts, blouses, sweaters, jackets</p>
+                                    </div>
+                                    <div class="category-name">Search for Tops</div>
+                                    <div class="category-confidence">Click to select</div>
+                                    <input type="radio" name="selected_category" value="top" id="category_top" style="display: none;">
+                                </div>
+                                
+                                <!-- Bottom Category -->
+                                <div class="category-card" onclick="selectCategory('bottom')">
+                                    <div style="background: #f3e5f5; padding: 20px; border-radius: 10px; margin-bottom: 15px;">
+                                        <h3 style="color: #7b1fa2; margin: 0;">👖 Bottom</h3>
+                                        <p style="color: #666; margin: 10px 0 0 0;">Pants, jeans, skirts, shorts</p>
+                                    </div>
+                                    <div class="category-name">Search for Bottoms</div>
+                                    <div class="category-confidence">Click to select</div>
+                                    <input type="radio" name="selected_category" value="bottom" id="category_bottom" style="display: none;">
+                                </div>
+                            </div>
+                            
+                            <div style="text-align: center; margin-top: 30px;">
+                                <button type="submit" class="search-btn" id="searchBtn" disabled>
+                                    Search for Selected Category
+                                </button>
+                            </div>
+                        </form>
+                        
+                        <!-- Show detected items for reference -->
+                        <div style="margin-top: 40px; padding: 20px; background: #f8f9fa; border-radius: 10px;">
+                            <h3>Detected Items:</h3>
+                            <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px;">
+                                {% for item in results.detected_items %}
+                                <span style="background: #667eea; color: white; padding: 8px 15px; border-radius: 20px; font-size: 14px;">
+                                    {{ item.item|title }}
+                                    <span style="background: rgba(255,255,255,0.2); padding: 2px 6px; border-radius: 10px; margin-left: 5px; font-size: 12px;">
+                                        {{ item.confidence_pct|floatformat:1 }}%
+                                    </span>
+                                </span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
+                    <!-- Individual item selection (original behavior for single items) -->
+                    <div class="categories-section">
+                        <div class="categories-title">
+                            <h2>Detected Clothing Items</h2>
+                            <p>Click on a category to search for similar products</p>
+                        </div>
+                        
+                        <form method="post" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <input type="hidden" name="session_id" value="{{ results.session_id }}">
+                            
+                            <div class="categories-grid">
+                                {% for item in results.detected_items %}
+                                <div class="category-card" onclick="selectCategory('{{ item.index }}')">
+                                    {% if item.mask_image %}
+                                        <img src="{{ item.mask_image.public_url }}" 
+                                             alt="Cropped {{ item.item }}" 
+                                             class="category-image">
+                                    {% else %}
+                                        <div class="no-image-placeholder">
+                                            <span>No cropped image available</span>
+                                        </div>
+                                    {% endif %}
+                                    
+                                    <div class="category-name">{{ item.item|title }}</div>
+                                    <div class="category-confidence">{{ item.confidence_pct|floatformat:1 }}% confidence</div>
+                                    
+                                    <input type="radio" name="selected_item" value="{{ item.index }}" 
+                                           id="item_{{ item.index }}" style="display: none;">
+                                </div>
+                                {% endfor %}
+                            </div>
+                            
+                            <div style="text-align: center; margin-top: 30px;">
+                                <button type="submit" class="search-btn" id="searchBtn" disabled>
+                                    Search for Selected Item
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                {% endif %}
+            {% endif %}
+            
+            <!-- No Items Detected -->
+            {% if results.no_items_detected %}
+                <div class="categories-section">
+                    <div class="categories-title">
+                        <h2>No Clothing Items Detected</h2>
+                        <p>YOLO was unable to detect any clothing items in your image.</p>
+                    </div>
+                    
+                    <div style="text-align: center; padding: 40px; background: #f8f9fa; border-radius: 15px;">
+                        <h3>Suggestions:</h3>
+                        <ul style="text-align: left; max-width: 400px; margin: 20px auto;">
+                            <li>Make sure the image contains clear clothing items</li>
+                            <li>Try uploading a different image with better lighting</li>
+                            <li>Ensure the clothing items are clearly visible</li>
+                            <li>Avoid images with too many background elements</li>
+                        </ul>
+                    </div>
+                </div>
+            {% endif %}
+            
+            <!-- Visual Search Results -->
+            {% if results.visual_search_results %}
+                <div class="visual-search-results">
+                    {% if results.selected_item %}
+                    <div class="selected-category-info">
+                        <h3>Searching for: {{ results.selected_item|title }}</h3>
+                        {% if results.selected_confidence and not results.category_selected %}
+                        <p>Confidence: <span class="category-confidence">{{ results.selected_confidence|floatformat:1 }}%</span></p>
+                        {% endif %}
+                        {% if results.used_cropped_image %}
+                        <p><em>Using cropped image for more accurate search</em></p>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    
+                    {% if results.visual_search_results.error %}
+                    <div class="error">
+                        <h3>Visual Search Error:</h3>
+                        <p>{{ results.visual_search_results.error }}</p>
+                    </div>
+                    {% else %}
+                        {% if results.visual_search_results.result_content %}
+                            <h3>Found {{ results.visual_search_results.result_content|length }} similar products:</h3>
+                            
+                            <div class="results-grid">
+                                {% for result in results.visual_search_results.result_content %}
+                                <div class="result-card">
+                                    {% if result.public_url %}
+                                        <a href="{{ result.public_url }}" target="_blank" style="text-decoration: none;">
+                                            <img src="{{ result.public_url }}" 
+                                                 alt="Product Image" 
+                                                 class="result-image">
+                                        </a>
+                                    {% else %}
+                                        <div class="no-image-placeholder">
+                                            <span>Image not available</span>
+                                        </div>
+                                    {% endif %}
+                                    
+                                    <div class="result-info">
+                                        <div class="result-title">
+                                            Product Code: {{ result.product_code|default:"N/A" }}
+                                        </div>
+                                        <div class="result-score">
+                                            Similarity: {{ result.score|floatformat:3 }}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div style="text-align: center; padding: 40px;">
+                                <h3>No similar products found</h3>
+                                <p>Try selecting a different category or uploading a different image.</p>
+                            </div>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+        // Handle file input change
+        document.getElementById('imageInput').addEventListener('change', function() {
+            const fileName = this.files[0]?.name;
+            if (fileName) {
+                document.querySelector('.file-input label').textContent = fileName;
+            }
+        });
+
+        // Handle form submission
+        document.getElementById('searchForm').addEventListener('submit', function() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('submitBtn').disabled = true;
+            document.getElementById('submitBtn').textContent = 'Processing...';
+        });
+
+        // Handle category selection
+        function selectCategory(index) {
+            // Remove previous selection
+            document.querySelectorAll('.category-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            
+            // Select clicked category
+            const selectedCard = event.currentTarget;
+            selectedCard.classList.add('selected');
+            
+            // Check the appropriate radio button
+            const radio = selectedCard.querySelector('input[type="radio"]');
+            if (radio) {
+                radio.checked = true;
+            }
+            
+            // Enable search button
+            const searchBtn = document.getElementById('searchBtn');
+            if (searchBtn) {
+                searchBtn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html> 
