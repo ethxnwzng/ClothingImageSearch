@@ -1,14 +1,13 @@
 # Intelligent Clothing Search System
 
-A Django-based web application that uses computer vision and machine learning to enable intelligent clothing item search. The system integrates YOLO object detection and DINO visual search to provide accurate product recommendations.
+A Django-based web application that uses computer vision and machine learning to enable intelligent clothing item search for Halara products. The system integrates YOLO object detection and DINO visual search to provide accurate product recommendations.
 
 ## Features
 
 - **Smart Object Detection**: Automatically detects and categorizes clothing items in uploaded images
 - **Intelligent Search**: Uses cropped item images for more accurate visual similarity search
-- **Category-Based Filtering**: Automatically categorizes items as "top" or "bottom" clothing
-- **Real-time Processing**: Provides immediate feedback with loading states and progress indicators
-- **Responsive Design**: Modern, mobile-friendly interface with smooth animations
+- **Category-Based Filtering**: Users specify search for "top" or "bottom" clothing if there are multiple clothing items detected
+- **Real-time Processing**: Provides immediate feedback with loading states, progress indicators, and probabilities of the model's inferences.
 - **Session Management**: Tracks search sessions and maintains state across interactions
 
 ## Technology Stack
